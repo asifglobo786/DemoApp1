@@ -33,14 +33,30 @@ jobs:
         run: |
           ls -R
 
-      - name: Run Sauce Labs tests
-        run: |
-           npm install -g saucectl
-#          Enable below line to run tests on SauceLab's Simulator
-   #       saucectl run -c .sauce/config-sim.yml
-#          OR
-#          Enable below line to run tests on SauceLab's Real Devices
-#          saucectl run -c .sauce/config-rdc.yml
-        env:
-          SAUCE_USERNAME: asifkazmiglobo
-          SAUCE_ACCESS_KEY: adf31460-1db4-4d39-8424-0ed20eb1cc41
+      - name: Upload IPA to Sauce Labs
+      id: upload-ipa
+      run: |
+        response=$(curl -u ${{ secrets.SAUCE_USERNAME }}:${{ secrets.SAUCE_ACCESS_KEY }} \
+          -X POST \
+          -H "Content-Type: application/octet-stream" \
+          --data-binary DemoApp1-main/AppsToTest-rdc/DemoApp1UITests-Runner.ipa \
+          "https://api.us-west-1.saucelabs.com/v1/storage/upload?name=DemoApp1UITests-Runner.ipa")
+        echo "Storage response: $response"
+        app_id=$(echo $response | jq -r .item.id)
+        echo "App ID: $app_id"
+        echo "APP_ID=$app_id" >> $GITHUB_ENV
+
+    - name: Trigger XCUITest on Sauce Labs
+      run: |
+        curl -u ${{secrets.SAUCE_USERNAME }}:${{ secrets.SAUCE_ACCESS_KEY }} \
+        -X POST \
+        -H "Content-Type: application/json" \
+        -d '{
+              "devices": [{"name": "iPhone.*", "platformVersion": "14"}],
+              "app": "sauce-storage:${{ env.APP_ID }}",
+              "testFramework": "xcuitest",
+              "testName": "My XCUITest",
+              "suites": ["YourTestSuite"],
+              "platformName": "iOS"
+            }' \
+        "https://api.us-west-1.saucelabs.com/v1/test/xcuitest"
