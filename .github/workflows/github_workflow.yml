@@ -34,8 +34,7 @@ jobs:
           ls -R
 
       - name: Upload IPA to Sauce Labs
-      id: upload-ipa
-      run: |
+        run: |
         response=$(curl -u ${{ secrets.SAUCE_USERNAME }}:${{ secrets.SAUCE_ACCESS_KEY }} \
           -X POST \
           -H "Content-Type: application/octet-stream" \
@@ -46,8 +45,8 @@ jobs:
         echo "App ID: $app_id"
         echo "APP_ID=$app_id" >> $GITHUB_ENV
 
-    - name: Trigger XCUITest on Sauce Labs
-      run: |
+      - name: Trigger XCUITest on Sauce Labs
+        run: |
         curl -u ${{secrets.SAUCE_USERNAME }}:${{ secrets.SAUCE_ACCESS_KEY }} \
         -X POST \
         -H "Content-Type: application/json" \
